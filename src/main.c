@@ -7,13 +7,13 @@
 #include <sys/wait.h>
 
 #define INPUT_BUFFER_SIZE 100
-#define CMD_AVAILABLE 3 //specifies the number of command suported
+#define CMD_AVAILABLE 4 //specifies the number of command suported
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGUMENT 100
 
 //specifing the list of commands the are supported/available to the shell
 //defining it as static const because the commands and their names are  fixed and available throughout the program
-static const char *builtin_cmd[CMD_AVAILABLE] = {"exit", "echo", "type"};
+static const char *builtin_cmd[CMD_AVAILABLE] = {"exit", "echo", "type", "pwd"};
 
 //this function returns the path of the executable
 char *find_in_path(char *cmd){
@@ -37,6 +37,7 @@ char *find_in_path(char *cmd){
         }
         p = strtok_r(NULL, ":", &state);
     }
+    free(path);
     return NULL;
 }
 
@@ -61,6 +62,7 @@ void execute_type(char *input){
             char *path = find_in_path(token);
             if (path != NULL){
                 printf("%s is %s\n", token, path);
+                free(path);
                 is_path_cmd = true;
             }
         }
@@ -102,6 +104,10 @@ void execute_external_command(char *input, char **envp){
         perror("execve");
         exit(1);
     }
+    else if (pid == -1){
+        perror("fork");
+        return;
+    }
     else {
         // parent process waits
         waitpid(pid, NULL, 0);
@@ -115,7 +121,6 @@ int main(int argc, char *argv[], char *envp[]) {
 	setbuf(stdout, NULL);
     // defining the buffer to store the input commands
 	char input[INPUT_BUFFER_SIZE];
-    int i;
 
 	printf("$ ");
 	while(fgets(input, sizeof(input), stdin) != NULL){
@@ -139,6 +144,16 @@ int main(int argc, char *argv[], char *envp[]) {
         else if(strncmp(input, "type ", 5) == 0){
             char *ptr = input + 5;
             execute_type(ptr);
+        }
+
+        else if (strncmp(input, "pwd", 3) == 0){
+            char pwd[1024];
+            if (getcwd(pwd, sizeof(pwd)) != 0){
+                printf("%s\n", pwd);
+            }
+            else {
+                perror("getcwd() error");
+            }
         }
 
         //implement executing commands through PATH and provide them with arguments
