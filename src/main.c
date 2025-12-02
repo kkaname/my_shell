@@ -15,6 +15,38 @@
 //defining it as static const because the commands and their names are  fixed and available throughout the program
 static const char *builtin_cmd[CMD_AVAILABLE] = {"exit", "echo", "type", "pwd"};
 
+void execute_cd(char *cmd){
+    char *arg[MAX_ARGUMENT];
+    char *dir, *token, *state;
+    char *cd_cmd = cmd;
+    token = strtok_r(cd_cmd, " ", &state);
+    int i = 0;
+    while (token != NULL){
+        arg[i++] = token;
+        token = strtok_r(NULL, " ", &state);
+    }
+    arg[i] = NULL;
+        
+    if (arg[1] == NULL || strncmp(arg[1], "~", 1) == 0){
+        dir = getenv("HOME");
+        if (dir == NULL){
+            printf("cd: Error set to home directory\n");
+            return;
+        }
+    }
+    else if (arg[2] != NULL){
+        printf("cd: Too many arguments\n");
+        return;
+    }
+    else dir = arg[1];
+
+    if (chdir(dir) != 0){
+        printf("cd: %s: No such file or directory\n", dir);
+        return;
+    }
+}
+
+
 //this function returns the path of the executable
 char *find_in_path(char *cmd){
     if (strchr(cmd, '/')){
@@ -154,6 +186,10 @@ int main(int argc, char *argv[], char *envp[]) {
             else {
                 perror("getcwd() error");
             }
+        }
+
+        else if (strncmp(input, "cd", 2) == 0){
+            execute_cd(input); 
         }
 
         //implement executing commands through PATH and provide them with arguments
