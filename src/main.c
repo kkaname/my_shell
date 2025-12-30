@@ -15,6 +15,71 @@
 //defining it as static const because the commands and their names are  fixed and available throughout the program
 static const char *builtin_cmd[CMD_AVAILABLE] = {"exit", "echo", "type", "pwd"};
 
+void execute_cd (char *cmd);
+char *find_in_path(char *cmd);
+void execute_type(char *input);
+void execute_external_command(char *input, char **envp);
+
+
+int main(int argc, char *argv[], char *envp[]) {
+	// Flush after every printf
+	setbuf(stdout, NULL);
+    // defining the buffer to store the input commands
+	char input[INPUT_BUFFER_SIZE];
+
+	printf("$ ");
+	while(fgets(input, sizeof(input), stdin) != NULL) {
+        //if the input is too long, then we need to clear the input buffer before the next user input
+        if (strchr(input, '\n') == NULL) {
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+        }
+        //remove the '\n' character from the end that is included by the fgets() when the user presses enter Enter
+		input[strcspn(input, "\n")] = '\0';
+
+        if (strcmp(input, "exit 0") == 0 || strcmp(input, "exit 1") == 0 || strcmp(input, "exit") == 0) {
+            exit(0);
+        }
+
+        //inplementing the echo command
+        else if (strncmp(input, "echo ", 5) == 0) {
+            printf("%s\n", input + 5);
+        }
+
+        else if(strncmp(input, "type ", 5) == 0) {
+            char *ptr = input + 5;
+            execute_type(ptr);
+        }
+
+        else if (strncmp(input, "pwd", 3) == 0) {
+            char pwd[1024];
+            if (getcwd(pwd, sizeof(pwd)) != 0) {
+                printf("%s\n", pwd);
+            }
+            else {
+                perror("getcwd() error");
+            }
+        }
+
+        else if (strncmp(input, "cd", 2) == 0) {
+            execute_cd(input);
+        }
+
+        //implement executing commands through PATH and provide them with arguments
+        else if (input[0] != '\0') {
+            execute_external_command(input, envp);
+        }
+
+        else {
+  		    printf("%s: command not found\n", input);
+        }
+		printf("$ ");
+	}
+
+  return EXIT_SUCCESS;
+}
+
+
 void execute_cd (char *cmd) {
     char *arg[MAX_ARGUMENT];
     char *dir, *token, *state;
@@ -146,62 +211,4 @@ void execute_external_command(char *input, char **envp) {
     }
 
     free(path);
-}
-
-int main(int argc, char *argv[], char *envp[]) {
-	// Flush after every printf
-	setbuf(stdout, NULL);
-    // defining the buffer to store the input commands
-	char input[INPUT_BUFFER_SIZE];
-
-	printf("$ ");
-	while(fgets(input, sizeof(input), stdin) != NULL) {
-        //if the input is too long, then we need to clear the input buffer before the next user input
-        if (strchr(input, '\n') == NULL) {
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF);
-        }
-        //remove the '\n' character from the end that is included by the fgets() when the user presses enter Enter
-		input[strcspn(input, "\n")] = '\0';
-
-        if (strcmp(input, "exit 0") == 0 || strcmp(input, "exit 1") == 0 || strcmp(input, "exit") == 0) {
-            exit(0);
-        }
-
-        //inplementing the echo command
-        else if (strncmp(input, "echo ", 5) == 0) {
-            printf("%s\n", input + 5);
-        }
-
-        else if(strncmp(input, "type ", 5) == 0) {
-            char *ptr = input + 5;
-            execute_type(ptr);
-        }
-
-        else if (strncmp(input, "pwd", 3) == 0) {
-            char pwd[1024];
-            if (getcwd(pwd, sizeof(pwd)) != 0) {
-                printf("%s\n", pwd);
-            }
-            else {
-                perror("getcwd() error");
-            }
-        }
-
-        else if (strncmp(input, "cd", 2) == 0) {
-            execute_cd(input);
-        }
-
-        //implement executing commands through PATH and provide them with arguments
-        else if (input[0] != '\0') {
-            execute_external_command(input, envp);
-        }
-
-        else {
-  		    printf("%s: command not found\n", input);
-        }
-		printf("$ ");
-	}
-
-  return EXIT_SUCCESS;
 }
