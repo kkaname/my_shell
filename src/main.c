@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+//defining all the macro's here...
 #define INPUT_BUFFER_SIZE 100
 #define CMD_AVAILABLE 4 //specifies the number of command suported
 #define MAX_COMMAND_LENGTH 1024
@@ -15,6 +16,7 @@
 //defining it as static const because the commands and their names are  fixed and available throughout the program
 static const char *builtin_cmd[CMD_AVAILABLE] = {"exit", "echo", "type", "pwd"};
 
+//declaring all the function prototypes here....
 void execute_cd (char *cmd);
 char *find_in_path(char *cmd);
 void execute_type(char *input);
